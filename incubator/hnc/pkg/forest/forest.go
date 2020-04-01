@@ -145,7 +145,7 @@ func (f *Forest) GetNamespaceNames() []string {
 type namedNamespaces map[string]*Namespace
 
 // TODO Store source objects by GK in the forest - https://github.com/kubernetes-sigs/multi-tenancy/issues/281
-type objects map[schema.GroupVersionKind]map[string]*unstructured.Unstructured
+type objects map[schema.GroupKind]map[string]*unstructured.Unstructured
 type conditions map[string][]condition
 
 // Local represents conditions that originated from this namespace
@@ -347,16 +347,16 @@ func (ns *Namespace) SetHNSes(hnsnms []string) (diff []string) {
 func (ns *Namespace) SetOriginalObject(obj *unstructured.Unstructured) {
 	gvk := obj.GroupVersionKind()
 	name := obj.GetName()
-	_, ok := ns.originalObjects[gvk]
+	_, ok := ns.originalObjects[gvk.GroupKind()]
 	if !ok {
-		ns.originalObjects[gvk] = map[string]*unstructured.Unstructured{}
+		ns.originalObjects[gvk.GroupKind()] = map[string]*unstructured.Unstructured{}
 	}
-	ns.originalObjects[gvk][name] = obj
+	ns.originalObjects[gvk.GroupKind()][name] = obj
 }
 
 // GetOriginalObject gets an original object from a key string. It returns nil, if the key doesn't exist.
 func (ns *Namespace) GetOriginalObject(gvk schema.GroupVersionKind, key string) *unstructured.Unstructured {
-	return ns.originalObjects[gvk][key]
+	return ns.originalObjects[gvk.GroupKind()][key]
 }
 
 // HasOriginalObject returns if the namespace has an original object.
@@ -366,17 +366,17 @@ func (ns *Namespace) HasOriginalObject(gvk schema.GroupVersionKind, oo string) b
 
 // DeleteOriginalObject deletes an original object from a key string.
 func (ns *Namespace) DeleteOriginalObject(gvk schema.GroupVersionKind, key string) {
-	delete(ns.originalObjects[gvk], key)
+	delete(ns.originalObjects[gvk.GroupKind()], key)
 	// Garbage collection
-	if len(ns.originalObjects[gvk]) == 0 {
-		delete(ns.originalObjects, gvk)
+	if len(ns.originalObjects[gvk.GroupKind()]) == 0 {
+		delete(ns.originalObjects, gvk.GroupKind())
 	}
 }
 
 // GetOriginalObjects returns all original objects in the namespace.
 func (ns *Namespace) GetOriginalObjects(gvk schema.GroupVersionKind) []*unstructured.Unstructured {
 	o := []*unstructured.Unstructured{}
-	for _, obj := range ns.originalObjects[gvk] {
+	for _, obj := range ns.originalObjects[gvk.GroupKind()] {
 		o = append(o, obj)
 	}
 	return o
