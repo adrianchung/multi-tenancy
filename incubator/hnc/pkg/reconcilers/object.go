@@ -67,7 +67,7 @@ type ObjectReconciler struct {
 	Forest *forest.Forest
 
 	// GVK is the group/version/kind handled by this reconciler.
-	GVK schema.GroupVersionKind
+	GK schema.GroupKind
 
 	// Mode describes propagation mode of objects that are handled by this reconciler.
 	// See more details in the comments of api.SynchronizationMode.
@@ -95,7 +95,7 @@ type ObjectReconciler struct {
 // It enqueues all the current objects in the namespace and local copies of the original objects
 // in the ancestors.
 func (r *ObjectReconciler) SyncNamespace(ctx context.Context, log logr.Logger, ns string) error {
-	log = log.WithValues("gvk", r.GVK)
+	log = log.WithValues("gk", r.GK)
 
 	// Enqueue all the current objects in the namespace because some of them may have been deleted.
 	if err := r.enqueueLocalObjects(ctx, log, ns); err != nil {
@@ -109,8 +109,8 @@ func (r *ObjectReconciler) SyncNamespace(ctx context.Context, log logr.Logger, n
 }
 
 // GetGVK provides GVK that is handled by this reconciler.
-func (r *ObjectReconciler) GetGVK() schema.GroupVersionKind {
-	return r.GVK
+func (r *ObjectReconciler) GetGVK() schema.GroupKind {
+	return r.GK
 }
 
 // GetMode provides the mode of objects that are handled by this reconciler.
@@ -138,7 +138,7 @@ func GetValidateMode(mode api.SynchronizationMode, log logr.Logger) api.Synchron
 // SetMode sets the Mode field of an object reconciler and syncs objects in the cluster if needed.
 // The method will return an error if syncs fail.
 func (r *ObjectReconciler) SetMode(ctx context.Context, mode api.SynchronizationMode, log logr.Logger) error {
-	log = log.WithValues("gvk", r.GVK)
+	log = log.WithValues("gk", r.GK)
 	newMode := GetValidateMode(mode, log)
 	oldMode := r.Mode
 	if newMode == oldMode {
@@ -191,8 +191,8 @@ func (r *ObjectReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return resp, nil
 	}
 
-	stats.StartObjReconcile(r.GVK)
-	defer stats.StopObjReconcile(r.GVK)
+	stats.StartObjReconcile(r.GK)
+	defer stats.StopObjReconcile(r.GK)
 
 	// Read the object.
 	inst := &unstructured.Unstructured{}
@@ -336,7 +336,7 @@ func (r *ObjectReconciler) syncObject(ctx context.Context, log logr.Logger, inst
 // Or do nothing if it remains the same as the source object.
 func (r *ObjectReconciler) syncPropagated(ctx context.Context, log logr.Logger, inst *unstructured.Unstructured) (syncAction, *unstructured.Unstructured) {
 	// Find a source object of the same name in any of the ancestores.
-	srcInst := r.Forest.Get(inst.GetNamespace()).GetSource(r.GVK, inst.GetName())
+	srcInst := r.Forest.Get(inst.GetNamespace()).GetSource(r.GK, inst.GetName())
 
 	// If no source object exists, delete this object. This can happen when the source was deleted by
 	// users or the admin decided this type should no longer be propagated.

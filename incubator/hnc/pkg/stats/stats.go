@@ -61,10 +61,9 @@ func StopHierConfigReconcile() {
 
 // StartObjReconcile updates the stats for objects with common GK
 // when an object reconciliation starts.
-func StartObjReconcile(gvk schema.GroupVersionKind) {
+func StartObjReconcile(gk schema.GroupKind) {
 	peak.lock.Lock()
 	defer peak.lock.Unlock()
-	gk := gvk.GroupKind()
 	if _, ok := stats.objects[gk]; !ok {
 		stats.objects[gk] = &object{}
 	}
@@ -79,8 +78,7 @@ func StartObjReconcile(gvk schema.GroupVersionKind) {
 
 // StopObjReconcile updates the stats for objects with common GK
 // when an object reconciliation finishes.
-func StopObjReconcile(gvk schema.GroupVersionKind) {
-	gk := gvk.GroupKind()
+func StopObjReconcile(gk schema.GroupKind) {
 	stats.objects[gk].curReconciles.decr()
 }
 

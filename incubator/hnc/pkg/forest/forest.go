@@ -27,8 +27,8 @@ var (
 type TypeSyncer interface {
 	// SyncNamespace syncs objects of a namespace for a specific type.
 	SyncNamespace(context.Context, logr.Logger, string) error
-	// Provides the GVK that is handled by the reconciler who implements the interface.
-	GetGVK() schema.GroupVersionKind
+	// Provides the GK that is handled by the reconciler who implements the interface.
+	GetGK() schema.GroupKind
 	// SetMode sets the propagation mode of objects that are handled by the reconciler who implements the interface.
 	// The method also syncs objects in the cluster for the type handled by the reconciler if necessary.
 	SetMode(context.Context, api.SynchronizationMode, logr.Logger) error
@@ -91,9 +91,9 @@ func (f *Forest) AddTypeSyncer(nss TypeSyncer) {
 
 // GetTypeSyncer returns the reconciler for the given GVK or nil if the reconciler
 // does not exist.
-func (f *Forest) GetTypeSyncer(gvk schema.GroupVersionKind) TypeSyncer {
+func (f *Forest) GetTypeSyncer(gk schema.GroupKind) TypeSyncer {
 	for _, t := range f.types {
-		if t.GetGVK() == gvk {
+		if t.GetGK() == gk {
 			return t
 		}
 	}
@@ -366,10 +366,11 @@ func (ns *Namespace) HasOriginalObject(gvk schema.GroupVersionKind, oo string) b
 
 // DeleteOriginalObject deletes an original object from a key string.
 func (ns *Namespace) DeleteOriginalObject(gvk schema.GroupVersionKind, key string) {
-	delete(ns.originalObjects[gvk.GroupKind()], key)
+	gk := gvk.GroupKind()
+	delete(ns.originalObjects[gk], key)
 	// Garbage collection
-	if len(ns.originalObjects[gvk.GroupKind()]) == 0 {
-		delete(ns.originalObjects, gvk.GroupKind())
+	if len(ns.originalObjects[gk]) == 0 {
+		delete(ns.originalObjects, gk)
 	}
 }
 
