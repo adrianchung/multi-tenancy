@@ -196,6 +196,8 @@ func (r *ObjectReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	// Read the object.
 	inst := &unstructured.Unstructured{}
+	// Unstructured requires a GVK to look things up.
+	// Note no Setters
 	inst.SetGroupVersionKind(r.GVK)
 	inst.SetNamespace(req.Namespace)
 	inst.SetName(req.Name)
@@ -381,7 +383,7 @@ func (r *ObjectReconciler) syncSource(ctx context.Context, log logr.Logger, src 
 	nnm := src.GetNamespace()
 	nm := src.GetName()
 	ns := r.Forest.Get(nnm)
-	origCopy := ns.GetOriginalObject(r.GVK, nm)
+	origCopy := ns.GetOriginalObject(r.GK, nm)
 
 	// Early exit if the source object exists and remains unchanged.
 	if origCopy != nil && reflect.DeepEqual(object.Canonical(src), object.Canonical(origCopy)) {
@@ -426,6 +428,7 @@ func (r *ObjectReconciler) enqueueNamespace(log logr.Logger, nnm, reason string)
 // enqueueLocalObjects enqueues all the objects (with the same GVK) in the namespace.
 func (r *ObjectReconciler) enqueueLocalObjects(ctx context.Context, log logr.Logger, ns string) error {
 	ul := &unstructured.UnstructuredList{}
+	// No SetGroup
 	ul.SetGroupVersionKind(r.GVK)
 	if err := r.List(ctx, ul, client.InNamespace(ns)); err != nil {
 		log.Error(err, "Couldn't list objects")
@@ -610,7 +613,7 @@ func (r *ObjectReconciler) shouldPropagateSource(log logr.Logger, inst *unstruct
 		r.setCondition(log, api.CannotPropagate, inst.GetNamespace(), getObjectKey(inst), "Objects with finalizers cannot be propagated")
 		return false
 
-	case r.GVK.Group == "" && r.GVK.Kind == "Secret":
+	case r.GK.Group == "" && r.GK.Kind == "Secret":
 		// These are reaped by a builtin K8s controller so there's no point copying them.
 		// More to the point, SA tokens really aren't supposed to be copied between
 		// namespaces. You *could* make the argument that a parent namespace's SA should be
@@ -659,6 +662,7 @@ func (r *ObjectReconciler) recordRemovedObject(log logr.Logger, namespace, name 
 
 func (r *ObjectReconciler) SetupWithManager(mgr ctrl.Manager, maxReconciles int) error {
 	target := &unstructured.Unstructured{}
+	// Note: Unstructured does not provide a SetGroup method, only SetKind, so we're indexed on GVK
 	target.SetGroupVersionKind(r.GVK)
 	opts := controller.Options{
 		MaxConcurrentReconciles: maxReconciles,

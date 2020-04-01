@@ -355,17 +355,18 @@ func (ns *Namespace) SetOriginalObject(obj *unstructured.Unstructured) {
 }
 
 // GetOriginalObject gets an original object from a key string. It returns nil, if the key doesn't exist.
-func (ns *Namespace) GetOriginalObject(gvk schema.GroupVersionKind, key string) *unstructured.Unstructured {
-	return ns.originalObjects[gvk.GroupKind()][key]
+func (ns *Namespace) GetOriginalObject(gvk schema.GroupKind, key string) *unstructured.Unstructured {
+	return ns.originalObjects[gvk][key]
 }
 
 // HasOriginalObject returns if the namespace has an original object.
-func (ns *Namespace) HasOriginalObject(gvk schema.GroupVersionKind, oo string) bool {
-	return ns.GetOriginalObject(gvk, oo) != nil
+func (ns *Namespace) HasOriginalObject(gk schema.GroupKind, oo string) bool {
+	return ns.GetOriginalObject(gk, oo) != nil
 }
 
 // DeleteOriginalObject deletes an original object from a key string.
 func (ns *Namespace) DeleteOriginalObject(gvk schema.GroupVersionKind, key string) {
+	// Don't we need the version here to know what we're deleting?
 	gk := gvk.GroupKind()
 	delete(ns.originalObjects[gk], key)
 	// Garbage collection
@@ -375,16 +376,16 @@ func (ns *Namespace) DeleteOriginalObject(gvk schema.GroupVersionKind, key strin
 }
 
 // GetOriginalObjects returns all original objects in the namespace.
-func (ns *Namespace) GetOriginalObjects(gvk schema.GroupVersionKind) []*unstructured.Unstructured {
+func (ns *Namespace) GetOriginalObjects(gk schema.GroupKind) []*unstructured.Unstructured {
 	o := []*unstructured.Unstructured{}
-	for _, obj := range ns.originalObjects[gvk.GroupKind()] {
+	for _, obj := range ns.originalObjects[gk] {
 		o = append(o, obj)
 	}
 	return o
 }
 
 // GetPropagatedObjects returns all original copies in the ancestors.
-func (ns *Namespace) GetPropagatedObjects(gvk schema.GroupVersionKind) []*unstructured.Unstructured {
+func (ns *Namespace) GetPropagatedObjects(gk schema.GroupKind) []*unstructured.Unstructured {
 	o := []*unstructured.Unstructured{}
 	ans := ns.AncestryNames(nil)
 	for _, n := range ans {
@@ -392,7 +393,7 @@ func (ns *Namespace) GetPropagatedObjects(gvk schema.GroupVersionKind) []*unstru
 		if n == ns.name {
 			continue
 		}
-		o = append(o, ns.forest.Get(n).GetOriginalObjects(gvk)...)
+		o = append(o, ns.forest.Get(n).GetOriginalObjects(gk)...)
 	}
 	return o
 }
