@@ -345,13 +345,13 @@ func (ns *Namespace) SetHNSes(hnsnms []string) (diff []string) {
 
 // SetOriginalObject updates or creates the original object in the namespace in the forest.
 func (ns *Namespace) SetOriginalObject(obj *unstructured.Unstructured) {
-	gvk := obj.GroupVersionKind()
+	gk := obj.GroupVersionKind().GroupKind()
 	name := obj.GetName()
-	_, ok := ns.originalObjects[gvk.GroupKind()]
+	_, ok := ns.originalObjects[gk]
 	if !ok {
-		ns.originalObjects[gvk.GroupKind()] = map[string]*unstructured.Unstructured{}
+		ns.originalObjects[gk] = map[string]*unstructured.Unstructured{}
 	}
-	ns.originalObjects[gvk.GroupKind()][name] = obj
+	ns.originalObjects[gk][name] = obj
 }
 
 // GetOriginalObject gets an original object from a key string. It returns nil, if the key doesn't exist.
